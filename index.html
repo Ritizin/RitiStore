@@ -307,20 +307,23 @@
   .product-price { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
   .old-price { font-size: 0.8rem; color: var(--muted); text-decoration: line-through; }
   .add-btn {
-    background: var(--primary);
+    background: #22c55e;
     border: none;
     color: #fff;
-    width: 32px;
-    height: 32px;
+    padding: 7px 14px;
     border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    gap: 5px;
+    font-size: 0.82rem;
+    font-weight: 600;
     transition: background 0.2s;
+    white-space: nowrap;
   }
-  .add-btn:hover { background: var(--primary-dark); }
+  .add-btn:hover { background: #16a34a; }
+  .add-btn:disabled { background: var(--muted); cursor: default; opacity: 0.6; }
   .product-link {
     display: flex;
     align-items: center;
@@ -970,6 +973,13 @@
         <input type="url" id="p-link" placeholder="https://...">
       </div>
       <div class="form-group full">
+        <label>Imagem do Anúncio (URL da imagem)</label>
+        <input type="url" id="p-image" placeholder="https://...jpg" oninput="previewProductImg(this.value)">
+        <div id="p-img-preview" style="margin-top:8px;display:none">
+          <img id="p-img-tag" src="" alt="Preview" style="max-height:120px;border-radius:8px;border:1px solid var(--border);object-fit:cover">
+        </div>
+      </div>
+      <div class="form-group full">
         <label>Descrição</label>
         <textarea id="p-desc" rows="2" placeholder="Breve descrição do produto..."></textarea>
       </div>
@@ -1437,7 +1447,7 @@ function renderProducts() {
     list.map(p => `
       <div class="product-card">
         <div class="product-img">
-          <i class="ti ${CAT_ICONS[p.cat]||'ti-package'}"></i>
+          ${p.image ? `<img src="${p.image}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:0">` : `<i class="ti ${CAT_ICONS[p.cat]||'ti-package'}"></i>`}
           <span class="img-label">${p.cat}</span>
           ${p.badge ? `<span class="product-badge badge-${p.badge}">${p.badge==='hot'?'🔥 HOT':p.badge==='new'?'✨ NOVO':'💰 OFERTA'}</span>` : ''}
         </div>
@@ -1445,13 +1455,16 @@ function renderProducts() {
           <div class="product-cat">${p.cat}</div>
           <div class="product-name">${p.name}</div>
           <div class="product-desc">${p.desc||''}</div>
-          ${p.link ? `<a class="product-link" href="${p.link}" target="_blank"><i class="ti ti-external-link"></i>Ver na loja</a>` : ''}
+
           <div class="product-bottom" style="margin-top:10px">
             <div>
               ${p.oldprice ? `<div class="old-price">${fmt(p.oldprice)}</div>` : ''}
               <div class="product-price">${fmt(p.price)}</div>
             </div>
-            <button class="add-btn" onclick="addToCart(${p.id})"><i class="ti ti-plus"></i></button>
+            ${p.link
+              ? `<button class="add-btn" onclick="window.open('${p.link}','_blank')"><i class="ti ti-shopping-bag"></i> Acessar</button>`
+              : `<button class="add-btn" disabled title="Link não disponível"><i class="ti ti-shopping-bag"></i> Acessar</button>`
+            }
           </div>
         </div>
       </div>`).join('');
@@ -1848,8 +1861,11 @@ function openProductModal(id = null) {
     document.getElementById('p-link').value = p.link || '';
     document.getElementById('p-desc').value = p.desc || '';
     document.getElementById('p-status').value = p.status;
+    document.getElementById('p-image').value = p.image || '';
+    previewProductImg(p.image || '');
   } else {
-    ['p-name','p-price','p-oldprice','p-link','p-desc'].forEach(id => document.getElementById(id).value = '');
+    ['p-name','p-price','p-oldprice','p-link','p-desc','p-image'].forEach(id => document.getElementById(id).value = '');
+    previewProductImg('');
     document.getElementById('p-cat').value = categories[0]?.name || '';
     document.getElementById('p-badge').value = '';
     document.getElementById('p-status').value = 'active';
@@ -1858,6 +1874,19 @@ function openProductModal(id = null) {
 }
 
 function closeProductModal() { document.getElementById('product-modal').classList.remove('show'); }
+
+function previewProductImg(url) {
+  const wrap = document.getElementById('p-img-preview');
+  const img  = document.getElementById('p-img-tag');
+  if (url && url.trim()) {
+    img.src = url.trim();
+    wrap.style.display = 'block';
+    img.onerror = () => { wrap.style.display = 'none'; };
+  } else {
+    wrap.style.display = 'none';
+    img.src = '';
+  }
+}
 
 function saveProduct() {
   if (!validateSession()) { showToast('Sessão expirada. Faça login novamente.', 'error'); logout(); return; }
@@ -1873,6 +1902,7 @@ function saveProduct() {
     link: document.getElementById('p-link').value.trim(),
     desc: document.getElementById('p-desc').value.trim(),
     status: document.getElementById('p-status').value,
+    image: document.getElementById('p-image').value.trim(),
   };
   if (editingId) {
     const idx = products.findIndex(p => p.id === editingId);
