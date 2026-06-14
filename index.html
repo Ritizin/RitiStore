@@ -826,10 +826,6 @@
     <nav id="main-nav"></nav>
     <div class="header-right">
       <button class="admin-link" onclick="openLogin()"><i class="ti ti-shield-lock"></i>Admin</button>
-      <button class="cart-btn" onclick="toggleCart()">
-        <i class="ti ti-shopping-cart"></i> Carrinho
-        <span class="badge" id="cart-count">0</span>
-      </button>
     </div>
   </header>
 
@@ -1382,7 +1378,7 @@ initCSRF();
 // ============================================================
 // CATEGORIES (dinâmico)
 // ============================================================
-let categories = [
+const DEFAULT_CATEGORIES = [
   { id:'cat1', name:'Processadores',   icon:'ti-cpu',                        sub:'Intel & AMD' },
   { id:'cat2', name:'Placas de Vídeo', icon:'ti-device-desktop-analytics',   sub:'NVIDIA & AMD' },
   { id:'cat3', name:'Memória RAM',     icon:'ti-server',                     sub:'DDR4 & DDR5' },
@@ -1392,6 +1388,30 @@ let categories = [
   { id:'cat7', name:'Coolers',         icon:'ti-wind',                       sub:'Air & Liquid' },
   { id:'cat8', name:'Fontes',          icon:'ti-bolt',                       sub:'Modulares' },
 ];
+
+function loadFromStorage() {
+  try {
+    const savedCats = localStorage.getItem('ritisore_categories');
+    const savedProds = localStorage.getItem('ritisore_products');
+    const savedNextId = localStorage.getItem('ritisore_nextId');
+    const savedNextCatId = localStorage.getItem('ritisore_nextCatId');
+    if (savedCats) categories = JSON.parse(savedCats);
+    if (savedProds) products = JSON.parse(savedProds);
+    if (savedNextId) nextId = parseInt(savedNextId);
+    if (savedNextCatId) nextCatId = parseInt(savedNextCatId);
+  } catch(e) { console.warn('Erro ao carregar dados salvos:', e); }
+}
+
+function saveToStorage() {
+  try {
+    localStorage.setItem('ritisore_categories', JSON.stringify(categories));
+    localStorage.setItem('ritisore_products', JSON.stringify(products));
+    localStorage.setItem('ritisore_nextId', nextId);
+    localStorage.setItem('ritisore_nextCatId', nextCatId);
+  } catch(e) { console.warn('Erro ao salvar dados:', e); }
+}
+
+let categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
 let nextCatId = 9;
 let editingCatId = null;
 
@@ -1403,7 +1423,7 @@ function getCatIcon(catName) {
 // Helper mantido para compatibilidade com código que usa CAT_ICONS
 const CAT_ICONS = new Proxy({}, { get(_, key) { return getCatIcon(key); } });
 
-let products = [
+const DEFAULT_PRODUCTS = [
   { id:1, name:'Intel Core i9-14900K', cat:'Processadores', price:2799, oldprice:3200, badge:'hot', desc:'24 núcleos, 32 threads, até 6.0GHz', status:'active', link:'https://www.pichau.com.br' },
   { id:2, name:'AMD Ryzen 9 7950X', cat:'Processadores', price:3199, oldprice:0, badge:'', desc:'16 núcleos, 32 threads, 5.7GHz max', status:'active', link:'' },
   { id:3, name:'NVIDIA RTX 4090 24GB', cat:'Placas de Vídeo', price:9999, oldprice:11000, badge:'hot', desc:'Ada Lovelace, 24GB GDDR6X', status:'active', link:'https://www.kabum.com.br' },
@@ -1419,6 +1439,9 @@ let products = [
   { id:13, name:'ASUS ROG Thor 1000W', cat:'Fontes', price:999, oldprice:1100, badge:'', desc:'Modular, 80+ Platinum', status:'active', link:'' },
 ];
 let nextId = 14;
+
+let products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+loadFromStorage();
 let cart = [];
 let editingId = null;
 let currentCat = 'Todos';
@@ -1802,6 +1825,7 @@ function saveCat() {
     categories.push({ id: 'cat' + nextCatId++, name, sub, icon });
     showToast('Categoria criada!', 'success');
   }
+  saveToStorage();
   closeCatModal();
   renderAdminCats();
   renderAdminTable();
@@ -1823,6 +1847,7 @@ function deleteCat(id) {
   document.getElementById('confirm-cat-ok').onclick = () => {
     closeConfirmCat();
     categories = categories.filter(x => x.id !== id);
+    saveToStorage();
     showToast('Categoria excluída.', 'success');
     renderAdminCats();
     renderAdminTable();
@@ -1886,6 +1911,7 @@ function saveProduct() {
     products.push({ id: nextId++, ...data });
     showToast('Produto adicionado!', 'success');
   }
+  saveToStorage();
   closeProductModal();
   renderAdminTable();
   renderAdminDash();
@@ -1899,6 +1925,7 @@ function deleteProduct(id) {
   if (!validateSession()) { showToast('Sessão expirada. Faça login novamente.', 'error'); logout(); return; }
   openConfirm(() => {
     products = products.filter(p => p.id !== id);
+    saveToStorage();
     renderAdminTable();
     renderAdminDash();
     renderAdminCats();
