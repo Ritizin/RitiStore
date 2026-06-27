@@ -366,6 +366,15 @@
     padding:8px 18px; font-weight:700; font-size:13px; color:var(--ink);
   }
   .btn-entrar:hover{ background:var(--stamp-red); color:#fff; border-color:var(--stamp-red); }
+  .btn-admin-chip{
+    display:inline-flex;align-items:center;gap:5px;
+    border:1.5px solid var(--stamp-red);background:rgba(232,64,87,.1);
+    color:var(--stamp-red);border-radius:99px;
+    padding:5px 12px;font-weight:700;font-size:12px;
+    text-decoration:none;white-space:nowrap;
+    transition:background .12s,transform .12s;
+  }
+  .btn-admin-chip:hover{background:var(--stamp-red);color:#fff;transform:translateY(-1px);}
 
   /* ---------- Toggle "Meus salvos" ---------- */
   .btn-salvos{
@@ -418,7 +427,6 @@
   <div class="brand">🏷️ BARATO<span>CERTO</span></div>
   <nav class="topbar-actions">
     <div id="user-area"><button class="btn-entrar" id="btn-auth-open">Entrar / Cadastrar</button></div>
-    <button class="link-btn" id="btn-admin-open">Área administrativa</button>
   </nav>
 </header>
 
@@ -495,7 +503,7 @@
 
     <form id="user-login-form">
       <div class="login-form" style="margin-top:0;">
-        <div class="field"><label>E-mail</label><input type="email" id="user-login-email" required></div>
+        <div class="field"><label>E-mail ou usuário</label><input type="text" id="user-login-email" required autocomplete="username"></div>
         <div class="field"><label>Senha</label><input type="password" id="user-login-password" required></div>
         <p class="auth-msg error" id="user-login-msg"></p>
         <button class="btn-primary" type="submit">Entrar</button>
@@ -513,70 +521,7 @@
   </div>
 </div>
 
-<!-- ===================== PAINEL ADMIN ===================== -->
-<div id="admin-overlay">
-  <div class="admin-panel">
-    <button class="admin-close" id="admin-close">✕</button>
-
-    <div id="admin-login-view">
-      <h2>Área administrativa</h2>
-      <p style="color:var(--ink-soft); font-size:14px; margin-top:-8px;">Entre com a conta de admin criada no Supabase.</p>
-      <form class="login-form" id="login-form">
-        <div class="field"><label>E-mail</label><input type="email" id="login-email" required></div>
-        <div class="field"><label>Senha</label><input type="password" id="login-password" required></div>
-        <button class="btn-primary" type="submit">Entrar</button>
-        <span id="login-error" style="color:var(--stamp-red); font-size:13px; font-weight:600;"></span>
-      </form>
-    </div>
-
-    <div id="admin-dashboard-view" style="display:none;">
-      <div class="user-bar">
-        <h2 style="margin:0;">Painel de ofertas</h2>
-        <button class="btn-secondary" id="btn-logout">Sair</button>
-      </div>
-
-      <form id="promo-form">
-        <input type="hidden" id="promo-id">
-        <div class="admin-grid-form">
-          <div class="field span-2"><label>Título *</label><input type="text" id="f-titulo" required></div>
-          <div class="field span-2"><label>Descrição</label><textarea id="f-descricao"></textarea></div>
-          <div class="field"><label>Plataforma *</label>
-            <select id="f-plataforma" required>
-              <option value="aliexpress">AliExpress</option>
-              <option value="shopee">Shopee</option>
-              <option value="mercadolivre">Mercado Livre</option>
-              <option value="kabum">Kabum</option>
-              <option value="pichau">Pichau</option>
-              <option value="outros">Outros</option>
-            </select>
-          </div>
-          <div class="field"><label>Link da oferta *</label><input type="url" id="f-link" required placeholder="https://..."></div>
-          <div class="field"><label>Preço original (R$)</label><input type="number" step="0.01" min="0" id="f-preco-original"></div>
-          <div class="field"><label>Preço com desconto (R$)</label><input type="number" step="0.01" min="0" id="f-preco-promo"></div>
-          <div class="field"><label>URL da imagem</label><input type="url" id="f-imagem" placeholder="https://..."></div>
-          <div class="field"><label>Cupom</label><input type="text" id="f-cupom" placeholder="Ex: PROMO10"></div>
-          <div class="field"><label>Expira em</label><input type="datetime-local" id="f-expira"></div>
-          <div class="field" style="justify-content:center;"><label>&nbsp;</label>
-            <span class="checkbox-row"><input type="checkbox" id="f-destaque"> Marcar como destaque</span>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button class="btn-primary" type="submit" id="btn-salvar">Publicar oferta</button>
-          <button class="btn-secondary" type="button" id="btn-cancelar-edicao" style="display:none;">Cancelar edição</button>
-        </div>
-      </form>
-
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr><th>Título</th><th>Plataforma</th><th>Preço</th><th>Desc.</th><th>Cliques</th><th>Ativa</th><th>Ações</th></tr>
-          </thead>
-          <tbody id="admin-table-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- Painel Admin movido para admin.html -->
 
 <script>
 /* ============================================================
@@ -599,7 +544,6 @@ const PLATAFORMA_LABEL = {
 
 let allPromos = [];
 let state = { plataforma: "todos", busca: "", ordenar: "recentes", apenasSalvos: false };
-let editandoId = null;
 
 /* ---- Conta de usuário / curtidas / salvos ---- */
 let currentUser = null;
@@ -662,9 +606,6 @@ async function carregarPromocoes(){
     atualizarStats();
     renderDestaques();
     aplicarFiltrosERenderizar();
-    if(document.getElementById("admin-dashboard-view").style.display !== "none"){
-      renderAdminTable();
-    }
   }catch(err){
     console.error(err);
     document.getElementById("error-slot").innerHTML = `
@@ -887,141 +828,7 @@ if(CONFIG_OK){
     .subscribe();
 }
 
-/* ===================== ADMIN ===================== */
-const overlay = document.getElementById("admin-overlay");
-document.getElementById("btn-admin-open").addEventListener("click", ()=>{
-  overlay.classList.add("open");
-  checkSessao();
-});
-document.getElementById("admin-close").addEventListener("click", ()=> overlay.classList.remove("open"));
-overlay.addEventListener("click", (e)=>{ if(e.target === overlay) overlay.classList.remove("open"); });
-
-async function checkSessao(){
-  if(!CONFIG_OK){ showToast("Configure o Supabase antes de usar a área admin.", true); return; }
-  const { data } = await sb.auth.getSession();
-  if(data.session){
-    document.getElementById("admin-login-view").style.display = "none";
-    document.getElementById("admin-dashboard-view").style.display = "block";
-    renderAdminTable();
-  }else{
-    document.getElementById("admin-login-view").style.display = "block";
-    document.getElementById("admin-dashboard-view").style.display = "none";
-  }
-}
-
-document.getElementById("login-form").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
-  const errEl = document.getElementById("login-error");
-  errEl.textContent = "";
-  const { error } = await sb.auth.signInWithPassword({ email, password });
-  if(error){ errEl.textContent = "E-mail ou senha incorretos."; return; }
-  checkSessao();
-});
-
-document.getElementById("btn-logout").addEventListener("click", async ()=>{
-  await sb.auth.signOut();
-  checkSessao();
-});
-
-/* ---- Formulário de oferta (criar/editar) ---- */
-const form = document.getElementById("promo-form");
-form.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const payload = {
-    titulo: document.getElementById("f-titulo").value.trim(),
-    descricao: document.getElementById("f-descricao").value.trim() || null,
-    plataforma: document.getElementById("f-plataforma").value,
-    link: document.getElementById("f-link").value.trim(),
-    preco_original: document.getElementById("f-preco-original").value ? Number(document.getElementById("f-preco-original").value) : null,
-    preco_promo: document.getElementById("f-preco-promo").value ? Number(document.getElementById("f-preco-promo").value) : null,
-    imagem_url: document.getElementById("f-imagem").value.trim() || null,
-    cupom: document.getElementById("f-cupom").value.trim() || null,
-    expira_em: document.getElementById("f-expira").value ? new Date(document.getElementById("f-expira").value).toISOString() : null,
-    destaque: document.getElementById("f-destaque").checked
-  };
-
-  let result;
-  if(editandoId){
-    result = await sb.from('promocoes').update(payload).eq('id', editandoId);
-  }else{
-    result = await sb.from('promocoes').insert(payload);
-  }
-
-  if(result.error){ showToast("Erro ao salvar: " + result.error.message, true); return; }
-  showToast(editandoId ? "Oferta atualizada!" : "Oferta publicada!");
-  cancelarEdicao();
-  carregarPromocoes();
-});
-
-document.getElementById("btn-cancelar-edicao").addEventListener("click", cancelarEdicao);
-function cancelarEdicao(){
-  editandoId = null;
-  form.reset();
-  document.getElementById("btn-salvar").textContent = "Publicar oferta";
-  document.getElementById("btn-cancelar-edicao").style.display = "none";
-}
-
-function renderAdminTable(){
-  const tbody = document.getElementById("admin-table-body");
-  if(allPromos.length === 0){
-    tbody.innerHTML = `<tr><td colspan="7">Nenhuma oferta cadastrada ainda. Use o formulário acima para criar a primeira.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = allPromos.map(p => `
-    <tr>
-      <td>${escapeHtml(p.titulo)}</td>
-      <td>${PLATAFORMA_LABEL[p.plataforma] || p.plataforma}</td>
-      <td>${p.preco_promo ? formatarPreco(p.preco_promo) : '-'}</td>
-      <td>${p.desconto_percentual ? p.desconto_percentual + '%' : '-'}</td>
-      <td>${p.cliques || 0}</td>
-      <td><button class="switch ${p.ativo ? 'on' : ''}" data-id="${p.id}" data-ativo="${p.ativo}" aria-label="Alternar ativa"></button></td>
-      <td class="row-actions">
-        <button class="icon-btn" data-action="editar" data-id="${p.id}">Editar</button>
-        <button class="icon-btn" data-action="excluir" data-id="${p.id}">Excluir</button>
-      </td>
-    </tr>`).join("");
-}
-
-document.getElementById("admin-table-body").addEventListener("click", async (e)=>{
-  const switchBtn = e.target.closest(".switch");
-  if(switchBtn){
-    const novoValor = !(switchBtn.dataset.ativo === "true");
-    const { error } = await sb.from('promocoes').update({ ativo: novoValor }).eq('id', switchBtn.dataset.id);
-    if(error){ showToast("Erro: " + error.message, true); return; }
-    carregarPromocoes();
-    return;
-  }
-  const editBtn = e.target.closest('[data-action="editar"]');
-  if(editBtn){
-    const p = allPromos.find(x => x.id === editBtn.dataset.id);
-    if(!p) return;
-    editandoId = p.id;
-    document.getElementById("f-titulo").value = p.titulo || "";
-    document.getElementById("f-descricao").value = p.descricao || "";
-    document.getElementById("f-plataforma").value = p.plataforma;
-    document.getElementById("f-link").value = p.link || "";
-    document.getElementById("f-preco-original").value = p.preco_original ?? "";
-    document.getElementById("f-preco-promo").value = p.preco_promo ?? "";
-    document.getElementById("f-imagem").value = p.imagem_url || "";
-    document.getElementById("f-cupom").value = p.cupom || "";
-    document.getElementById("f-expira").value = p.expira_em ? new Date(p.expira_em).toISOString().slice(0,16) : "";
-    document.getElementById("f-destaque").checked = !!p.destaque;
-    document.getElementById("btn-salvar").textContent = "Salvar alterações";
-    document.getElementById("btn-cancelar-edicao").style.display = "inline-block";
-    form.scrollIntoView({ behavior:"smooth" });
-    return;
-  }
-  const delBtn = e.target.closest('[data-action="excluir"]');
-  if(delBtn){
-    if(!confirm("Excluir esta oferta permanentemente?")) return;
-    const { error } = await sb.from('promocoes').delete().eq('id', delBtn.dataset.id);
-    if(error){ showToast("Erro: " + error.message, true); return; }
-    showToast("Oferta excluída.");
-    carregarPromocoes();
-  }
-});
+/* Admin movido para admin.html */
 
 /* ===================== LOGIN / CADASTRO DE USUÁRIOS ===================== */
 const authOverlay = document.getElementById("auth-overlay");
@@ -1051,11 +858,25 @@ tabCadastro.addEventListener("click", ()=>{
 
 formUserLogin.addEventListener("submit", async (e)=>{
   e.preventDefault();
-  const email = document.getElementById("user-login-email").value.trim();
+  const emailOrUser = document.getElementById("user-login-email").value.trim();
   const password = document.getElementById("user-login-password").value;
   const msgEl = document.getElementById("user-login-msg");
   msgEl.textContent = ""; msgEl.className = "auth-msg";
-  const { error } = await sb.auth.signInWithPassword({ email, password });
+
+  /* Login admin local */
+  if(emailOrUser === ADMIN_USER && password === ADMIN_PASS){
+    sessionStorage.setItem(ADMIN_SESSION_KEY, '1');
+    authOverlay.classList.remove("open");
+    formUserLogin.reset();
+    /* cria uma sessão visual de admin sem Supabase Auth */
+    currentUser = { email: ADMIN_USER + "@admin.local", id: "admin-local" };
+    renderUserArea();
+    showToast("Bem-vindo, Ritizin! 👋");
+    return;
+  }
+
+  if(!CONFIG_OK){ msgEl.textContent = "Supabase não configurado."; msgEl.className = "auth-msg error"; return; }
+  const { error } = await sb.auth.signInWithPassword({ email: emailOrUser, password });
   if(error){ msgEl.textContent = "E-mail ou senha incorretos."; msgEl.className = "auth-msg error"; return; }
   authOverlay.classList.remove("open");
   formUserLogin.reset();
@@ -1080,17 +901,28 @@ formUserCadastro.addEventListener("submit", async (e)=>{
   }
 });
 
+/* Admin local session */
+const ADMIN_USER = "Ritizin";
+const ADMIN_PASS = "46616712";
+const ADMIN_SESSION_KEY = "bc_admin_session";
+function isAdminLogado(){return sessionStorage.getItem(ADMIN_SESSION_KEY)==='1';}
+
 function renderUserArea(){
   const area = document.getElementById("user-area");
   if(currentUser){
-    const inicial = (currentUser.email || "?").charAt(0);
+    const inicial = (currentUser.email || "?").charAt(0).toUpperCase();
+    const isAdmin = isAdminLogado();
     area.innerHTML = `
-      <div class="user-chip">
-        <span class="avatar">${escapeHtml(inicial)}</span>
-        <span>${escapeHtml(currentUser.email)}</span>
-        <button id="btn-user-logout" type="button">Sair</button>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        ${isAdmin ? `<a class="btn-admin-chip" href="admin.html">⚙️ Painel Admin</a>` : ''}
+        <div class="user-chip">
+          <span class="avatar">${escapeHtml(inicial)}</span>
+          <span>${escapeHtml(currentUser.email)}</span>
+          <button id="btn-user-logout" type="button">Sair</button>
+        </div>
       </div>`;
     document.getElementById("btn-user-logout").addEventListener("click", async ()=>{
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
       await sb.auth.signOut();
     });
   }else{
